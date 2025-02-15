@@ -229,7 +229,7 @@ impl VideoSettings {
         args.push("-svtav1-params".to_string());
         // TODO: change to `tune=3` after custom SVT-AV1-PSY is included !!!
         args.push(format!(
-            "tune=2:sharpness=1:input-depth=10:enable-qm=1:qm-min=0:keyint=300:aq-mode=2:sharpness=1:irefresh-type=2:film-grain={}:film-grain-denoise={}",
+            "tune=0:sharpness=1:input-depth=10:enable-qm=1:qm-min=0:keyint=300:aq-mode=2:sharpness=1:irefresh-type=2:film-grain={}:film-grain-denoise={}",
             self.grain, denoise
         ));
         args
