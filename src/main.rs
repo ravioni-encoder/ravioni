@@ -27,9 +27,9 @@ fn main() -> Result<(), slint::PlatformError> {
     let ui_weak: slint::Weak<MainWindow> = ui.as_weak();
     let model = Rc::new(RefCell::new(model::Model::new(settings, ui_weak.clone())));
 
-    ////////////////////
-    // Tab: Paths
-    ////////////////////
+    //////////////////////////////
+    // Tab: Paths / Title
+    //////////////////////////////
 
     let model_clone = Rc::clone(&model);
     ui.on_select_input_file(move || {
@@ -78,9 +78,19 @@ fn main() -> Result<(), slint::PlatformError> {
         model_clone.borrow().write_settings_to_file();
     });
 
-    ////////////////////
+    let model_clone = Rc::clone(&model);
+    ui.on_matroska_file_title_edited(move |title| {
+        debug!(
+            "Received matroska file title edited event. Value now is {}.",
+            title
+        );
+        model_clone.borrow_mut().current_job.matroska.file_title = title.to_string();
+        model_clone.borrow().write_settings_to_file();
+    });
+
+    //////////////////////////////
     // Tab: Settings
-    ////////////////////
+    //////////////////////////////
 
     //// Video
 
@@ -357,9 +367,9 @@ fn main() -> Result<(), slint::PlatformError> {
         model_clone.borrow_mut().reset_video_audio_settings();
     });
 
-    ////////////////////
+    //////////////////////////////
     // Tab: Run
-    ////////////////////
+    //////////////////////////////
 
     let model_clone = Rc::clone(&model);
     ui.on_only_encode_segment_toggled(move |only_part| {

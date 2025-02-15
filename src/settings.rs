@@ -376,6 +376,11 @@ pub struct ApplicationSettings {
     pub advanced_settings: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct MatroskaSettings {
+    pub file_title: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RunSettings {
     pub only_encode_segment: bool,
@@ -441,6 +446,7 @@ pub struct Settings {
     pub version: i32,
     pub paths: PathSettings,
     pub encoding: EncodingSettings,
+    pub matroska: MatroskaSettings,
     pub run: RunSettings,
     pub application: ApplicationSettings,
 }
@@ -451,6 +457,7 @@ impl Default for Settings {
             version: 1,
             paths: PathSettings::default(),
             encoding: EncodingSettings::default(),
+            matroska: MatroskaSettings::default(),
             run: RunSettings::default(),
             application: ApplicationSettings::default(),
         }

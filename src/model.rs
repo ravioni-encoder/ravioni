@@ -40,7 +40,12 @@ impl Model {
         let mut model = Model {
             ui_weak,
             settings: settings.clone(),
-            current_job: Job::new(settings.paths, settings.encoding, settings.run),
+            current_job: Job::new(
+                settings.paths,
+                settings.encoding,
+                settings.matroska,
+                settings.run,
+            ),
             progress_rx: None,
             stopped_rx: None,
             ffmpeg_quit_tx: None,
@@ -56,6 +61,7 @@ impl Model {
         model.set_output_file(model.current_job.paths.output_file.clone());
         model.write_path_settings_to_ui();
         model.write_encoding_settings_to_ui();
+        model.write_matroska_settings_to_ui();
         model.write_run_settings_to_ui();
         model.write_job_status_to_ui();
         model.write_application_settings_to_ui();
@@ -250,7 +256,7 @@ impl Model {
     fn write_encoding_settings_to_ui(&self) {
         let settings = self.current_job.encoding.clone();
         debug!(
-            "Will write current jobs encoding settings to UI: {:?}",
+            "Will write current job's encoding settings to UI: {:?}",
             settings
         );
 
@@ -316,18 +322,39 @@ impl Model {
             .unwrap();
     }
 
+    /// Writes the model's matroska settings to the UI.
+    fn write_matroska_settings_to_ui(&self) {
+        let settings = self.current_job.matroska.clone();
+        debug!(
+            "Will write current job's matroska settings to UI: {:?}",
+            settings
+        );
+
+        self.ui_weak
+            .upgrade_in_event_loop(move |ui| {
+                ui.set_matroska_file_title(settings.file_title.into());
+            })
+            .unwrap();
+    }
+
     /// Writes the model's run settings to the UI.
     fn write_run_settings_to_ui(&self) {
-        let run = self.current_job.run.clone();
+        let settings = self.current_job.run.clone();
+        debug!(
+            "Will write current job's run settings to UI: {:?}",
+            settings
+        );
 
         if let Some(ui) = self.ui_weak.clone().upgrade() {
-            ui.set_only_encode_segment(run.only_encode_segment);
+            ui.set_only_encode_segment(settings.only_encode_segment);
             ui.set_only_encode_from(
-                run.only_encode_from()
+                settings
+                    .only_encode_from()
                     .map_or_else(SharedString::new, |from| from.to_string().into()),
             );
             ui.set_only_encode_for(
-                run.only_encode_for
+                settings
+                    .only_encode_for
                     .map_or_else(SharedString::new, |duration| {
                         duration.as_secs().to_string().into()
                     }),
@@ -337,6 +364,10 @@ impl Model {
 
     /// Writes the model's application settings to the UI.
     pub fn write_application_settings_to_ui(&self) {
+        debug!(
+            "Will write application settings to UI: {:?}",
+            self.settings.application
+        );
         if let Some(ui) = self.ui_weak.clone().upgrade() {
             ui.invoke_setDarkMode(self.settings.application.dark_mode);
             ui.set_showAdvancedSettings(self.settings.application.advanced_settings);
@@ -513,6 +544,7 @@ impl Model {
         self.current_job = Job::new(
             settings.paths.clone(),
             settings.encoding.clone(),
+            settings.matroska.clone(),
             settings.run.clone(),
         );
         self.settings = settings;
@@ -521,6 +553,7 @@ impl Model {
         self.set_output_file(PathBuf::new());
         self.write_path_settings_to_ui();
         self.write_encoding_settings_to_ui();
+        self.write_matroska_settings_to_ui();
         self.write_run_settings_to_ui();
         self.write_application_settings_to_ui();
         self.update_job_times();
@@ -537,6 +570,7 @@ impl Model {
         let mut settings = self.settings.clone();
         settings.paths = self.current_job.paths.clone();
         settings.encoding = self.current_job.encoding.clone();
+        settings.matroska = self.current_job.matroska.clone();
         settings.run = self.current_job.run.clone();
         settings.write_to_file();
     }
