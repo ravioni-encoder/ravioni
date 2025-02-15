@@ -67,6 +67,10 @@ pub fn encode(
         // The mov_text workaround must come after the subtitle copy argument to override it.
         .args(args_for_mov_text_subtitle_workaround(job))
         .format("matroska")
+        .args([
+            "-metadata",
+            format!("title={}", job.matroska.file_title).as_str(),
+        ])
         .overwrite()
         .output(
             output_file_path

@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use log::debug;
 
 use crate::metadata::InputFileMetadata;
-use crate::settings::{EncodingSettings, PathSettings, RunSettings};
+use crate::settings::{EncodingSettings, MatroskaSettings, PathSettings, RunSettings};
 use crate::subtitles::{
     detect_language_of_subtitle_file, detect_type_of_subtitle_file_type,
     gather_subtitle_file_paths_in, SubtitleFile,
@@ -54,6 +54,7 @@ pub struct Job {
     pub started_at: Option<Instant>,
     pub stopped_at: Option<Instant>,
     pub paths: PathSettings,
+    pub matroska: MatroskaSettings,
     pub encoding: EncodingSettings,
     pub run: RunSettings,
     pub input_file_metadata: Option<InputFileMetadata>,
@@ -66,12 +67,18 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn new(paths: PathSettings, encoding: EncodingSettings, run: RunSettings) -> Self {
+    pub fn new(
+        paths: PathSettings,
+        encoding: EncodingSettings,
+        matroska: MatroskaSettings,
+        run: RunSettings,
+    ) -> Self {
         Self {
             status: JobStatus::Editing,
             started_at: None,
             stopped_at: None,
             paths,
+            matroska,
             encoding,
             run,
             input_file_metadata: None,
@@ -249,6 +256,7 @@ pub mod tests {
             started_at: None,
             stopped_at: None,
             paths: PathSettings::default(),
+            matroska: MatroskaSettings::default(),
             encoding: EncodingSettings::default(),
             run: RunSettings::default(),
             input_file_metadata: Some(input_file_metadata),
@@ -330,8 +338,15 @@ pub mod tests {
     fn new_jobs_fields_are_identical_to_the_ones_passed_to_the_constructor() {
         let paths = PathSettings::default();
         let encoding = EncodingSettings::default();
+        let matroska = MatroskaSettings::default();
         let run = RunSettings::default();
-        let job = Job::new(paths.clone(), encoding.clone(), run.clone());
+
+        let job = Job::new(
+            paths.clone(),
+            encoding.clone(),
+            matroska.clone(),
+            run.clone(),
+        );
 
         assert_eq!(JobStatus::Editing, job.status);
         assert!(job.started_at.is_none());
@@ -347,6 +362,7 @@ pub mod tests {
         let job = Job::new(
             PathSettings::default(),
             EncodingSettings::default(),
+            MatroskaSettings::default(),
             RunSettings::default(),
         );
         assert_eq!(job.status, JobStatus::Editing);
@@ -357,6 +373,7 @@ pub mod tests {
         let mut job = Job::new(
             PathSettings::default(),
             EncodingSettings::default(),
+            MatroskaSettings::default(),
             RunSettings::default(),
         );
         job.start();
@@ -370,6 +387,7 @@ pub mod tests {
         let mut job = Job::new(
             PathSettings::default(),
             EncodingSettings::default(),
+            MatroskaSettings::default(),
             RunSettings::default(),
         );
         job.cancel();
@@ -382,6 +400,7 @@ pub mod tests {
         let mut job = Job::new(
             PathSettings::default(),
             EncodingSettings::default(),
+            MatroskaSettings::default(),
             RunSettings::default(),
         );
         job.finish();
@@ -395,6 +414,7 @@ pub mod tests {
         let mut job = Job::new(
             PathSettings::default(),
             EncodingSettings::default(),
+            MatroskaSettings::default(),
             RunSettings::default(),
         );
         job.input_file_metadata = Some(InputFileMetadata {
@@ -418,6 +438,7 @@ pub mod tests {
         let mut job = Job::new(
             PathSettings::default(),
             EncodingSettings::default(),
+            MatroskaSettings::default(),
             RunSettings::default(),
         );
         job.update_progress_history();
@@ -430,6 +451,7 @@ pub mod tests {
         let mut job = Job::new(
             PathSettings::default(),
             EncodingSettings::default(),
+            MatroskaSettings::default(),
             RunSettings::default(),
         );
         job.progress_history_skips = 0;
@@ -444,6 +466,7 @@ pub mod tests {
         let mut job = Job::new(
             PathSettings::default(),
             EncodingSettings::default(),
+            MatroskaSettings::default(),
             RunSettings::default(),
         );
         job.start();
@@ -456,6 +479,7 @@ pub mod tests {
         let mut job = Job::new(
             PathSettings::default(),
             EncodingSettings::default(),
+            MatroskaSettings::default(),
             RunSettings::default(),
         );
         job.progress_history_skips = 0;
@@ -495,6 +519,7 @@ pub mod tests {
         let mut job = Job::new(
             PathSettings::default(),
             EncodingSettings::default(),
+            MatroskaSettings::default(),
             RunSettings::default(),
         );
         job.progress_history_skips = 0;

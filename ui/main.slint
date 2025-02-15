@@ -229,6 +229,7 @@ export component MainWindow inherits Window {
     title: "Ravioni";
     icon: @image-url("../images/logo.png");
     preferred-width: 800px;
+    default-font-size: 14px;
 
     // Tab: Paths
 
@@ -244,6 +245,8 @@ export component MainWindow inherits Window {
     callback output_file_edited(string);
     callback sync_output_filename_toggled(bool);
     callback collect_input_file_metadata;
+    in-out property <string> matroska_file_title <=> matroskaFileTitle.text;
+    callback matroska_file_title_edited(string);
 
 
 
@@ -367,11 +370,11 @@ export component MainWindow inherits Window {
     VerticalBox {
         TabWidget {
             Tab {
-                title : "Paths";
+                title : "File";
                 VerticalBox {
                     alignment: start;
                     GroupBox {
-                        title: "Input file";
+                        title: "Input File";
                         VerticalLayout {
                             alignment: start;
                             HorizontalBox{
@@ -455,7 +458,7 @@ export component MainWindow inherits Window {
                         }
                     }
                     GroupBox {
-                        title: "Output file";
+                        title: "Output File";
                         z: -10;
                         VerticalLayout {
                             HorizontalBox {
@@ -512,18 +515,35 @@ export component MainWindow inherits Window {
                                     }
                                 }
                             }
+                        }
+                    }
+                    GroupBox {
+                        title: "Matroska File Title";
+                        HorizontalBox {
+                            ToolTipArea {
+                                text : "File title field stored in the Matroska (MKV) container. "
+                                + "Some players display it as the video’s main title.";
+                                window-width: root.width;
 
+                               matroskaFileTitle := LineEdit {
+                                    placeholder-text: "Your Movie (2025)";
+                                    input-type: text;
+                                    edited(value) => {
+                                        root.matroska_file_title_edited(value);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
             Tab {
-                title : "Video / Audio";
+                title : "Encoding";
                 VerticalBox {
                     GroupBox {
                         title: "Video";
                         VerticalLayout {
-                            // We don't want vertical padding, so using VericalLayout instead of
+                            // We don't want vertical padding, so using VerticalLayout instead of
                             // VerticalBox. But we still want the padding on the sides, because it
                             // looks better.
                             padding-left:10px;
