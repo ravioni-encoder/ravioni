@@ -14,6 +14,16 @@ Simple AV1 encoder GUI inspired by [Aviator](https://github.com/gianni-rosato/av
   and 7.1 using the same bitrate.
 * Automatically finds and adds subtitle files to output file with autodetection of language.
 
+
+## Running
+
+### Ubuntu or other Debian-based Linux Distributions
+
+1. `# apt install rustup` (as root)
+2. `$ rustup default stable` (as normal user)
+3. navigate to main folder (where Cargo.toml is located)
+4. `$ cargo run` (as normal user)
+
 ## Development
 
 ### NixOS

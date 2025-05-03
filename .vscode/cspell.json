@@ -32,6 +32,7 @@
         "mockall",
         "POSIX",
         "ravioni",
+        "rustup",
         "serde",
         "slint",
         "Slint",
