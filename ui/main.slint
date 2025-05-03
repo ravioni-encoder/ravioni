@@ -1,0 +1,1141 @@
+import { Palette, TabWidget, Switch, ProgressIndicator, LineEdit, Switch, TextEdit, Spinner, GroupBox, VerticalBox, CheckBox, Button, Slider, SpinBox, HorizontalBox, GridBox } from "std-widgets.slint";
+
+
+component ToolTipArea inherits Window {
+
+    in property <string> text;
+    in property <length> x-offset: 0px;
+    in property <length> y-offset: 3rem;
+    in property <length> window-width;
+
+
+    Rectangle {
+        // tooltip is above everything else (in this ToolTipArea)
+        z: 100;
+        states [
+            visible when ta.has-hover: {
+                opacity: 1;
+                in {
+                    animate opacity { duration: 175ms; delay: 1000ms; }
+                }
+            }
+        ]
+
+        x: max(-parent.absolute-position.x, min(ta.mouse-x + root.x-offset, - parent.absolute-position.x + window-width - self.width));
+        y: ta.mouse-y + y-offset;
+
+        background: Palette.foreground;
+        border-radius: 0.4rem;
+        opacity: 0;
+        // Rectangle does not increase size automatically(?), so set it to the sizes of the
+        // contained HorizontalLayout.
+        width: hlayout.preferred-width;
+        height: hlayout.preferred-height;
+        hlayout := HorizontalLayout { 
+            padding: 0.6rem;
+            Text {
+                text <=> root.text;
+                wrap:word-wrap;
+                width: 15rem;
+                color: Palette.background;
+                font-size: root.default-font-size * 0.9;
+            }
+        }
+    }
+    ta := TouchArea {
+        HorizontalLayout {
+            @children
+        }
+    }
+}
+
+component TextDisableable {
+    in property<bool> enabled;
+    in property<string> text;
+    in property<TextHorizontalAlignment> horizontal-alignment;
+    in property<TextVerticalAlignment> vertical-alignment: center;
+
+    Rectangle {
+        // Text has no ".enabled" property, so we remove
+        // Rectangle opacity when it is disabled.
+        opacity: enabled ? 1 : 0.2;
+        Text {
+            text: root.text;
+            vertical-alignment: vertical-alignment;
+            horizontal-alignment: horizontal-alignment;
+        }
+    }
+}
+
+
+component OpusBitrateSpinBox {
+    in property <bool> enabled;
+    in-out property <int> value <=> spinBox.value;
+    in property <string> text;
+    callback edited (int);
+
+        HorizontalLayout {
+            z: -6;
+
+            TextDisableable {
+                text: root.text;
+                enabled: root.enabled;
+                }
+
+            spinBox := SpinBox {
+                width: 8rem;
+                minimum: 6;
+                maximum: 510;
+                step-size: 16;
+                enabled: root.enabled;
+                edited(value) => {
+                    root.edited(value);
+                }
+            }
+    }
+    // }
+}
+
+component SuperSlider {
+    preferred-height: 100%;
+    preferred-width: 100%;
+
+    in property <string> tooltip;
+    // Can't write int value directly into slider.value, because slider only accepts float
+    // values. Therefore, using two properties.
+    in-out property <float> value <=> slider.value;
+    out property <int> intValue <=> slider.intValue;
+    in property <float> minimum;
+    in property <float> maximum;
+    in property <string> hint_lower;
+    in property <string> hint_higher;
+    in property <string> label;
+    in property <string> value_suffix: "";
+    in property <relative-font-size> label_width;
+    in property <length> value_width: 1.5rem;
+    in property <length> window-width;
+    callback changed(int);
+
+    // Tooltip
+
+    // Hint: Probably can't reuse the ToolTipArea component here, because the mouse wheel events
+    // below need direct access to TouchArea. Therefore, the ToolTipArea code is defined here again,
+    // unfortunately leading to code duplication.
+    Rectangle {
+        states [
+            visible when ta.has-hover: {
+                opacity: 1;
+                in {
+                    animate opacity { duration: 175ms; delay: 1000ms; }
+                }
+            }
+        ]
+
+        x: max(-parent.absolute-position.x, min(ta.mouse-x - 2rem, - parent.absolute-position.x + window-width - self.width));
+        y: ta.mouse-y + 3rem;
+
+        background: Palette.foreground;
+        border-radius: 0.4rem;
+        opacity: 0;
+        width: hlayout.preferred-width;
+        height: hlayout.preferred-height;
+        hlayout := HorizontalLayout {
+            padding: 0.6rem;
+            Text {
+                text <=> root.tooltip;
+                wrap:word-wrap;
+                width: 20rem;
+                color: Palette.background;
+            }
+        }
+    }
+    ta := TouchArea {
+        VerticalLayout  {
+            alignment: center;
+            HorizontalLayout {
+                spacing: 10px;
+                // Spacer
+                Rectangle {
+                    //          label       +  value + spacing
+                    width: root.label_width + 1.5rem + 1rem;
+                }
+                Text {
+                    text: "← \{root.hint_lower}";
+                    horizontal-alignment: left;
+                    font-weight: 300;
+                    visible: ta.has-hover;
+                }
+                Text {
+                    text: "\{root.hint_higher} →";
+                    horizontal-alignment: right;
+                    font-weight: 300;
+                    visible: ta.has-hover;
+                }
+            }
+            HorizontalLayout {
+                spacing: 10px;
+                Text {
+                    text: root.label;
+                    horizontal-alignment: right;
+                    vertical-alignment: top;
+                    width: root.label_width;
+                }
+                Text {
+                    horizontal-alignment: left;
+                    vertical-alignment: top;
+                    text: "\{slider.intValue}\{root.value_suffix}";
+                    width: root.value_width;
+                }
+                slider := Slider {
+                    out property<int> intValue: round(self.value);
+                    // We only want integer values. Therefore, apply ceil().
+                    minimum: ceil(root.minimum);
+                    maximum: ceil(root.maximum);
+                    changed(value) => {
+                        root.changed(intValue);
+                    }
+                }
+        }
+
+    }
+    // Manual implementation of mouse wheel on slider until it "just works" in Slint. This
+    // implementation has the advantage that the cursor can be over the text and number, too.
+    scroll-event(event) => {
+        if (event.delta-y < 0 && slider.value > slider.minimum) {
+            // Ignore actual mouse wheel distance and change by one, so that this is independent of
+            // user settings. This not something where people scroll around often and speed is not
+            // important.
+            slider.value = slider.value - 1;
+            slider.changed(slider.value - 1);
+            return accept;
+        }
+        else if (event.delta-y > 0 && slider.value < slider.maximum) {
+            slider.value = slider.value + 1;
+            slider.changed(slider.value + 1);
+            return accept;
+        }
+        // Usually a `reject` should be returned at the end, because we don't process the event, but
+        // this will break the tooltip display. This is because the `reject` sets the TouchArea's
+        // `has-hover` to `false`. Since there is no other component "close by" reacting to a mouse
+        // wheel here, this is fine.
+        return accept;
+        }
+     }
+}
+
+
+
+export component MainWindow inherits Window {
+    title: "Ravioni";
+    icon: @image-url("../images/logo.png");
+    preferred-width: 800px;
+
+    // Tab: Paths
+
+    in-out property <string> inputFilePath <=> inputFilePathTextEdit.text;
+    in property <string> inputFileError;
+    in-out property <bool> scanForSubtitles;
+    in-out property <string> outputFilePath <=> outputFilePathTextEdit.text;
+    in property <string> outputFileError;
+    in-out property <bool> syncOutputFilename <=> syncOutputFilenameCheckBox.checked;
+    callback select_input_file <=> inputFileButton.clicked;
+    callback scan_for_subtitles_toggled(bool);
+    callback select_output_file <=> outputFileButton.clicked;
+    callback output_file_edited(string);
+    callback sync_output_filename_toggled(bool);
+    callback collect_input_file_metadata;
+
+
+
+    // Tab: Encoding
+
+    callback reset_video_audio_settings;
+
+
+    //// Video
+
+    in-out property <float> crf <=> crfSlider.value;
+    out property <int> crfAsInt <=> crfSlider.intValue;
+    in-out property <float> preset <=> presetSlider.value;
+    out property <int> presetAsInt <=> presetSlider.intValue;
+    in-out property <bool> cropVideo <=> cropVideo.checked;
+    in-out property <string> cropVideoWidth <=> cropVideoWidthLineEdit.text;
+    in-out property <string> cropVideoHeight <=> cropVideoHeightLineEdit.text;
+    in-out property <string> cropVideoXOffset <=> cropVideoXOffsetLineEdit.text;
+    in-out property <string> cropVideoYOffset  <=> cropVideoYOffsetLineEdit.text;
+    in-out property <bool> scaleVideo <=> scaleVideo.checked;
+    in-out property <string> scaleVideoWidth <=> scaleVideoWidthLineEdit.text;
+    in-out property <string> scaleVideoHeight <=> scaleVideoHeightLineEdit.text;
+    in-out property <bool> do_not_denoise_video <=> doNotDenoiseVideoCheckBox.checked;
+    in-out property <float> grain <=> grainSlider.value;
+
+    callback crf_changed(int);
+    callback preset_changed(int);
+    callback crop_toggled(bool);
+    callback crop_width_edited(string);
+    callback crop_height_edited(string);
+    callback crop_x_offset_edited(string);
+    callback crop_y_offset_edited(string);
+    callback crop_autodetect_clicked();
+    callback scale_toggled(bool);
+    callback scale_width_edited(string);
+    callback scale_height_edited(string);
+    callback denoise_toggled(bool);
+    callback grain_changed(int);
+
+    in-out property <bool> spinAutodetectThrobber:false;
+    callback collect_crop_data;
+
+
+    //// Audio
+
+    in-out property <int> bitrate_2_0 <=> bitrate20SpinBox.value;
+    in-out property <int> bitrate_5_1 <=> bitrate51SpinBox.value;
+    in-out property <int> bitrate_7_1 <=> bitrate71SpinBox.value;
+    callback bitrate_2_0_edited(int);
+    callback bitrate_5_1_edited(int);
+    callback bitrate_7_1_edited(int);
+    in-out property <bool> downmix_5_1_to_stereo <=> downMix51ToStereoCheckBox.checked;
+    in-out property <bool> downmix_7_1_to_stereo <=> downMix71ToStereoCheckBox.checked;
+    callback downmix_5_1_to_stereo_toggled(bool);
+    callback downmix_7_1_to_stereo_toggled(bool);
+    in-out property <int> volume_adjustment <=> adjustVolumeSpinBox.value;
+    callback volume_adjustment_edited(int);
+    in-out property <bool> re_encode_good_audio_codecs <=> reEncodeGoodAudioCodecs.checked;
+    callback re_encode_good_audio_codecs_toggled(bool);
+    in-out property <bool> copyAudio <=> copyAudio.checked;
+    callback copy_toggled(bool);
+
+    // Tab: Run
+
+    in-out property <bool> only_encode_segment <=> onlyEncodeSegmentCheckBox.checked;
+    in-out property <string> only_encode_from <=> onlyEncodeFromLineEdit.text;
+    in-out property <string> only_encode_for <=> onlyEncodeForLineEdit.text;
+    in property <bool> encode_from_string_is_valid: true;
+    callback only_encode_segment_toggled(bool);
+    callback only_encode_from_edited(string);
+    callback only_encode_for_edited(string);
+
+    in property <string> ffmpegError;
+    in property <float> inputFps;
+    in property <string> inputDurationAsString;
+    in property <int> currentFrame: 0;
+    callback encode_clicked();
+    callback cancel_clicked();
+
+    // Settings
+
+    property <bool> showSettings <=> settingsButton.checked;
+
+    callback reset_all_settings_clicked;
+
+    callback dark_mode_toggled(bool);
+    in-out property <bool> darkMode;
+    public function setDarkMode(dark: bool) {
+        Palette.color-scheme = dark ? ColorScheme.dark : ColorScheme.light;
+        root.darkMode = dark;
+    }
+
+    // Show additional less used options.
+    in-out property <bool> showAdvancedSettings <=> advancedSettingsSwitch.checked;
+    callback advanced_settings_toggled(bool);
+
+    // Global
+    in property <bool> canStartEncoding: false;
+    in property <bool> encoding;
+    in property <float> progress: 0;
+    in property <float> encodingFps;
+    in property <string> status;
+    in property <string> elapsedTime;
+    in property <string> remainingTime;
+    callback collect_progress;
+    callback collect_finished;
+    callback update_job_times;
+
+    in property <string> version;
+
+
+
+    timer := Timer {
+        interval: 1s;
+        running: root.encoding;
+        triggered() => {
+            root.update_job_times();
+        }
+    }
+
+    VerticalBox {
+        TabWidget {
+            Tab {
+                title : "Paths";
+                VerticalBox {
+                    alignment: start;
+                    GroupBox {
+                        title: "Input file";
+                        VerticalLayout {
+                            alignment: start;
+                            HorizontalBox{
+                                inputFilePathTextEdit := TextEdit {
+                                    placeholder-text: "No input file selected";
+                                    horizontal-stretch: 3;
+                                    read-only: true;
+                                    wrap: char-wrap;
+                                    height: 90px;
+                                }
+                                inputFileButton := Button {
+                                    text: "Select File";
+                                    width: 8rem;
+                                }
+                            }
+
+                            // Indent everything that is below the input file selection and belongs
+                            // to the input file logically.
+                            VerticalLayout {
+                                padding-left: 1rem;
+
+                                if root.inputFileError != "": fileMissingError := HorizontalBox {
+                                    alignment: start;
+                                    Text {
+                                        text : "⚠";
+                                        color: red;
+                                        font-size: root.default-font-size * 1.5;
+                                        vertical-alignment: center;
+                                    }
+                                    inputFileErrorText := Text {
+                                        text : root.inputFileError;
+                                        color: red;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                                if root.inputFilePath != "" && root.inputFileError == "": HorizontalBox {
+                                    HorizontalLayout {
+                                        alignment:start;
+                                        spacing: 32px; // Leave room between Duration and FPS.
+                                        Text {
+                                            text: "Duration: \{root.inputDurationAsString}";
+                                            horizontal-alignment: center;
+                                        }
+                                        Text {
+                                            text: "FPS: \{root.inputFps}";
+                                            horizontal-alignment: center;
+                                        }
+                                    }
+
+                                    // Spacer that is a wide as the Browse button to
+                                    // make the duration and fps texts align with
+                                    // the right border of the above inputFilePath
+                                    // textbox.
+                                    Rectangle {
+                                        width: inputFileButton.width;
+                                    }
+                                }
+
+                                HorizontalLayout {
+                                    // Make some room to the metadata output/error message above.
+                                    padding-top: 2rem;
+                                    alignment: start;
+                                    ToolTipArea {
+                                        text : "Scan the directory of the input file and all its "
+                                        + "subdirectories for subtitle files and add them to the "
+                                        + "output file. Scan is performed when encoding starts, not"
+                                        + " when the input file (and thus its directory) is "
+                                        + "selected.";
+                                        window-width: root.width;
+                                        scanForSubtitlesCheckBox := CheckBox {
+                                            text: "Add all subtitle files in (sub)directorie(s) of "
+                                            + "input file.";
+                                            checked: root.scanForSubtitles;
+                                            toggled => {
+                                                root.scan_for_subtitles_toggled(self.checked);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    GroupBox {
+                        title: "Output file";
+                        z: -10;
+                        VerticalLayout {
+                            HorizontalBox {
+                                outputFilePathTextEdit := TextEdit {
+                                    read-only: false;
+                                    placeholder-text: "No output file selected";
+                                    horizontal-stretch: 3;
+                                    height: 5rem;
+                                    edited(path) => {
+                                        root.output_file_edited(path);
+                                    }
+                                }
+                                outputFileButton := Button {
+                                    text: "Select File";
+                                    width: 8rem;
+                                }
+                            }
+                            if root.outputFileError != "" : HorizontalBox {
+                                alignment: start;
+                                Text {
+                                    text : "⚠";
+                                    color: red;
+                                    font-size: root.default-font-size * 1.5;
+                                    vertical-alignment: center;
+                                }
+                                Text {
+                                    text : root.outputFileError;
+                                    color: red;
+                                    vertical-alignment: center;
+                                }
+                            }
+                            HorizontalBox {
+                                visible: showAdvancedSettings;
+                                // The alignment has no visual alignment effect in this layout, but
+                                // prevents the tooltip from appearing on the entire width of the
+                                // window and only over the actual checkbox and text, instead.
+                                alignment: start;
+                                padding-left: 1rem;
+                                ToolTipArea {
+                                    text : "If checked, will update the output filename (but not "
+                                    + "directory) when selecting a new input file. If unchecked, will"
+                                    + " not update the output filename. The latter is useful when "
+                                    + "using a consistent output filename pattern between encodes. "
+                                    + "Edit the textbox directly, then. Explicit selection of a new"
+                                    + " output file changes the entire output file path, regardless"
+                                    + ".";
+                                    window-width: root.width;
+                                    syncOutputFilenameCheckBox := CheckBox {
+                                        text: "Update output filename when selecting new input file"
+                                        + ".";
+                                        toggled => {
+                                            root.sync_output_filename_toggled(self.checked);
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+            Tab {
+                title : "Video / Audio";
+                VerticalBox {
+                    GroupBox {
+                        title: "Video";
+                        VerticalLayout {
+                            // We don't want vertical padding, so using VericalLayout instead of
+                            // VerticalBox. But we still want the padding on the sides, because it
+                            // looks better.
+                            padding-left:10px;
+                            padding-right: 10px;
+
+                            alignment: start;
+                            crfSlider := SuperSlider {
+                                minimum: 0;
+                                maximum: 63;
+                                hint_lower: "better, larger";
+                                hint_higher: "worse, smaller";
+                                label: "CRF";
+                                label_width: 3rem;
+                                tooltip: "The constant rate factor (CRF) determines the quality of the resulting video "
+                                + "stream. The lower the CRF, the more bits AV1 will use to encode the video stream. A "
+                                + "lower CRF will lead to better quality but also a larger file. Thus, here you decide "
+                                + "between quality and file size.";
+                                window-width: root.width;
+                                changed(value) => {
+                                    root.crf_changed(value);
+                                }
+                            }
+
+                            presetSlider := SuperSlider {
+                                z: -1;
+                                minimum: 0;
+                                maximum: 8;
+                                hint_lower: "better, slower";
+                                hint_higher: "worse, faster";
+                                label: "Preset";
+                                label_width: 3rem;
+                                tooltip: "The preset also determines the quality of the resulting video stream. The lower the"
+                                + " preset, the more computationally intensive algorithms AV1 will use to encode "
+                                + "the video stream. A lower preset will lead to better quality but also longer encoding "
+                                + "time. Thus, here you decide between quality and encoding time.";
+                                window-width: root.width;
+                                changed(value) => {
+                                    root.preset_changed(value);
+                                }
+                            }
+                            HorizontalLayout {
+                                z: -2;
+                                padding-top: 20px;
+                                spacing: 4px;
+                                alignment : start;
+                                ToolTipArea {
+                                    text : "Crop image to set dimensions. Used mostly to remove black bars around the image.";
+                                    window-width: root.width;
+                                    cropVideo := CheckBox {
+                                        text: "Crop to";
+                                        toggled => {
+                                            root.crop_toggled(self.checked);
+                                        }
+                                    }
+                                }
+
+                                cropVideoWidthLineEdit := LineEdit {
+                                    placeholder-text: "Width";
+                                    input-type: number;
+                                    width: 60px;
+                                    enabled: cropVideo.checked;
+                                    edited(value) => {
+                                        root.crop_width_edited(value);
+                                    }
+                                }
+                                cropVideoHeightLineEdit := LineEdit {
+                                    placeholder-text: "Height";
+                                    input-type: number;
+                                    width: 60px;
+                                    enabled: cropVideo.checked;
+                                    edited(value) => {
+                                        root.crop_height_edited(value);
+                                    }
+                                }
+
+                                Text {
+                                    text: "with offset";
+                                    vertical-alignment: center;
+                                }
+
+                                ToolTipArea {
+                                    text : "The cropped video starts this many pixels to the left "
+                                    + "on the x-axis.";
+                                    window-width: root.width;
+                                    cropVideoXOffsetLineEdit := LineEdit {
+                                        placeholder-text: "x-axis";
+                                        input-type: number;
+                                        width: 60px;
+                                        enabled: cropVideo.checked;
+                                        edited(value) => {
+                                            root.crop_x_offset_edited(value);
+                                        }
+                                    }
+                                }
+
+                                ToolTipArea {
+                                    text : "The cropped video starts this many pixels down on the "
+                                    + "y-axis.";
+                                    window-width: root.width;
+                                    cropVideoYOffsetLineEdit := LineEdit {
+                                        placeholder-text: "y-axis";
+                                        input-type: number;
+                                        width: 60px;
+                                        enabled: cropVideo.checked;
+                                        edited(value) => {
+                                            root.crop_y_offset_edited(value);
+                                        }
+                                    }
+                                }
+
+                                ToolTipArea {
+                                    text : "Calculate the crop parameters for black bar removal "
+                                    + "automatically by analyzing the video at multiple random time"
+                                    + " points. If crop parameters are not correctly recognized, "
+                                    + "run the detection again.";
+                                    window-width: root.width;
+                                    autodetectCropButton := Button {
+                                        enabled: cropVideo.checked;
+                                        text: "Autodetect";
+                                        clicked => {
+                                            root.spinAutodetectThrobber = true;
+                                            root.crop_autodetect_clicked();
+                                        }
+                                    }
+                                }
+
+                                Spinner {
+                                    indeterminate: true;
+                                    visible: spinAutodetectThrobber;
+
+                                }
+
+                                // Spacer
+                                Rectangle {
+                                    width: 2rem;
+                                }
+
+                                scaleVideo := CheckBox {
+                                    visible: showAdvancedSettings;
+                                    text: "then scale to";
+                                    toggled => {
+                                        root.scale_toggled(self.checked);
+                                    }
+                                }
+
+                                scaleVideoWidthLineEdit := LineEdit {
+                                    visible: showAdvancedSettings;
+                                    placeholder-text: "Width";
+                                    input-type: number;
+                                    width: 60px;
+                                    enabled: scaleVideo.checked;
+                                    edited(value) => {
+                                        root.scale_width_edited(value);
+                                    }
+                                }
+                                scaleVideoHeightLineEdit := LineEdit {
+                                    visible: showAdvancedSettings;
+                                    placeholder-text: "Height";
+                                    input-type: number;
+                                    width: 60px;
+                                    enabled: scaleVideo.checked;
+                                    edited(value) => {
+                                        root.scale_height_edited(value);
+                                    }
+                                }
+                            }
+
+                            HorizontalLayout {
+                                padding-top: 4px;
+                                visible: showAdvancedSettings;
+                                z: -3;
+
+                                grainSlider := SuperSlider {
+                                    z: -4;
+                                    minimum: 0;
+                                    maximum: 50;
+                                    hint_lower: "less grain";
+                                    hint_higher: "more grain";
+                                    label: "Film grain";
+                                    label_width: 5rem;
+                                    tooltip: "Analyze the input video image for film grain "
+                                    + "(noise), remove it, and add a synthetic approximation of "
+                                    + "it during playback. Reducing noise makes encoding easier "
+                                    + "(fewer bits needed) because then the image is less random, "
+                                    + "potentially decreasing file size significantly. However, it"
+                                    + " can remove fine details like fabric textures or skin "
+                                    + "blemishes, resulting in a washed-out image. The less noise "
+                                    + "in the source video, the lower this value should be. "
+                                    + "Recommended values: 8 for live action video with a normal "
+                                    + "amount of grain, 10-15 for noisier video, 4 for 2D animation"
+                                    + ", up to 10 for grainy animation. A value of 0 disables this "
+                                    + "feature entirely. If unsure, test with your source video.";
+                                    window-width: root.width;
+                                    changed(value) => {
+                                        root.grain_changed(value);
+                                    }
+                                }
+
+                                ToolTipArea {
+                                    text : "When checked, still analyze and create film grain "
+                                    + "during playback but encode the original frames without "
+                                    + "applying a denoise filter. This corresponds to the "
+                                    + "'film-grain-denoise=0' option (when checked).";
+                                    window-width: root.width;
+                                VerticalLayout {
+                                    // Padding moves the text of the Checkbox down. It then aligns
+                                    // with the label of the grainSlider.
+                                    padding-top:16px;
+                                    // Make some room to the grain slider for better visual
+                                    // separation.
+                                    padding-left: 2rem;
+                                        doNotDenoiseVideoCheckBox := CheckBox {
+                                            enabled: grainSlider.value != 0;
+                                            text: "Do not denoise";
+                                            toggled => {
+                                                root.denoise_toggled(!self.checked);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    GroupBox {
+                        z: -10;
+                        title: "Audio";
+                        VerticalBox {
+                            HorizontalLayout {
+                                alignment:start;
+                                VerticalBox {
+                                    // Separate headings from the bitrate and downmix components to
+                                    // the right (law of proximity).
+                                    padding-right: 1rem;
+                                    Text {
+                                        text: "2.0";
+                                        font-weight: 600;
+                                        width: 2rem;
+                                        vertical-alignment: center;
+                                    }
+                                    Text {
+                                        text: "5.1";
+                                        font-weight: 600;
+                                        width: 2rem;
+                                        vertical-alignment: center;
+                                    }
+                                    Text {
+                                        text: "7.1";
+                                        font-weight: 600;
+                                        width: 2rem;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                                vbBitRate := VerticalBox {
+                                    bitrate20SpinBox := OpusBitrateSpinBox {
+                                        text: "Bitrate ";
+                                        enabled: !copyAudio.checked;
+                                        edited(value) => {
+                                            root.bitrate_2_0_edited(value);
+                                        }
+                                    }
+                                    bitrate51SpinBox := OpusBitrateSpinBox {
+                                        text: "Bitrate ";
+                                        enabled: !copyAudio.checked && !downMix51ToStereoCheckBox.checked;
+                                        edited(value) => {
+                                            root.bitrate_5_1_edited(value);
+                                        }
+                                    }
+                                    bitrate71SpinBox := OpusBitrateSpinBox {
+                                        text: "Bitrate ";
+                                        enabled: !copyAudio.checked && !downMix71ToStereoCheckBox.checked;
+                                        edited(value) => {
+                                            root.bitrate_7_1_edited(value);
+                                        }
+                                    }
+                                }
+
+                                VerticalBox {
+                                    alignment:end;
+                                    // Invisible checkbox to have the two checkboxes below align
+                                    // with the bitrate spinboxes to the left.
+                                    CheckBox {
+                                        text: "";
+                                        visible:false;
+                                    }
+                                    ToolTipArea {
+                                        z: -11;
+                                        text : "Downmix all audio streams with 5.1 channel layout "
+                                        + "to 2.0 (stereo). Will use bitrate set for 2.0.";
+                                        window-width: root.width;
+                                        downMix51ToStereoCheckBox := CheckBox {
+                                            height: 2.2rem; // ugly: auto align would be better
+                                            visible: showAdvancedSettings;
+                                            text: "Downmix to stereo";
+                                            enabled: !copyAudio.checked;
+                                            toggled => {
+                                                root.downmix_5_1_to_stereo_toggled(self.checked);
+                                            }
+                                        }
+                                    }
+                                    ToolTipArea {
+                                        z: -12;
+                                        text : "Downmix all audio streams with 7.1 channel layout "
+                                        + "to 2.0 (stereo). Will use bitrate set for 2.0.";
+                                        window-width: root.width;
+                                        downMix71ToStereoCheckBox := CheckBox {
+                                            height: 2.2rem; // ugly: auto align would be better
+                                            visible: showAdvancedSettings;
+                                            text: "Downmix to stereo";
+                                            enabled: !copyAudio.checked;
+                                            toggled => {
+                                                root.downmix_7_1_to_stereo_toggled(self.checked);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            HorizontalLayout {
+                                // Although the volume adjustment box is alone in its row, align the
+                                // entire tooltip area to the left, so that the tooltip does not
+                                // appear on the empty space on the right.
+                                alignment: start;
+                                ToolTipArea {
+                                    text : "Adjust the volume of all audio streams. For example, a value of 50% will half the volume. A value of 200% will double the volume. At 100% no change will occur.";
+                                    window-width: root.width;
+                                    HorizontalLayout {
+                                        spacing: 0.5rem;
+                                        alignment: start;
+                                        visible: showAdvancedSettings;
+
+                                        TextDisableable {
+                                            text: "Adjust volume to";
+                                            enabled: adjustVolumeSpinBox.enabled;
+                                        }
+                                        adjustVolumeSpinBox := SpinBox {
+                                            width: 8rem;
+                                            minimum: 1;
+                                            maximum: 500;
+                                            step-size: 5;
+                                            enabled: !copyAudio.checked;
+                                            edited(value) => {
+                                                root.volume_adjustment_edited(value);
+                                            }
+
+                                        }
+                                        Text {
+                                            padding-left: 1rem;
+                                            text: "%";
+                                            vertical-alignment: center;
+                                        }
+                                    }
+                                }
+                            }
+
+                            HorizontalLayout {
+                                z:-15;
+                                alignment: start;
+                                padding-top: 1rem;
+                                visible: showAdvancedSettings;
+                                ToolTipArea {
+                                    text : "Opus, MP3 and Ogg Vorbis are considered \"good enough\""
+                                    + " already and should not be re-encoded into Opus (again) in "
+                                    + "most cases. You can force re-encoding anyway with this "
+                                    + "setting.";
+                                    window-width: root.width;
+                                    reEncodeGoodAudioCodecs := CheckBox {
+                                        enabled: !copyAudio.checked;
+                                        text: "Re-encode Opus, MP3 and Ogg Vorbis streams";
+                                        toggled => {
+                                            root.re_encode_good_audio_codecs_toggled(self.checked);
+                                        }
+                                    }
+                                }
+                            }
+
+                            HorizontalLayout {
+                                z:-15;
+                                alignment: start;
+                                padding-top: 1rem;
+                                ToolTipArea {
+                                    text : "Don't change audio streams in any way and copy them "
+                                    + "into the output file.";
+                                    window-width: root.width;
+                                    copyAudio := Switch {
+                                        text: "Copy original streams";
+                                        toggled => {
+                                            root.copy_toggled(self.checked);
+                                        }
+                                    }
+                                }
+                            }
+
+                            HorizontalLayout {
+                                z: -40;
+                                alignment: end;
+                                padding-top: 2rem;
+                                ToolTipArea {
+                                    text : "Reset all encoding settings in this tab (Video/Audio) "
+                                    + "to their default values.";
+                                    window-width: root.width;
+                                    Button {
+                                        text: "Reset to default values";
+                                        clicked => {
+                                            root.reset_video_audio_settings();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Tab {
+                title : "Run";
+                VerticalBox {
+                    padding-top: 4rem;
+                    ToolTipArea {
+                        text : "Encode only part of the video for e.g. testing.";
+                        window-width: root.width;
+                        HorizontalLayout {
+                            z: -42;
+                            alignment: start;
+                            spacing: 8px;
+                            visible: showAdvancedSettings;
+
+                            onlyEncodeSegmentCheckBox := CheckBox {
+                                text: "Only encode segment from";
+                                padding-right: 0;
+                                toggled => {
+                                   root.only_encode_segment_toggled(self.checked);
+                                }
+                            }
+
+                            onlyEncodeFromLineEdit := LineEdit {
+                                placeholder-text: "hh:mm:ss";
+                                input-type: text;
+                                width: 6.6rem;
+                                enabled: onlyEncodeSegmentCheckBox.checked;
+                                edited(value) => {
+                                    root.only_encode_from_edited(value);
+                                }
+                            }
+
+                            TextDisableable {
+                                text: "for";
+                                vertical-alignment: center;
+                                enabled: onlyEncodeSegmentCheckBox.checked;
+                            }
+
+                            onlyEncodeForLineEdit := LineEdit {
+                                placeholder-text: "ss";
+                                input-type: number;
+                                width: 4rem;
+                                enabled: onlyEncodeSegmentCheckBox.checked;
+                                edited(value) => {
+                                    root.only_encode_for_edited(value);
+                                }
+                            }
+
+                            TextDisableable {
+                                enabled: onlyEncodeSegmentCheckBox.checked;
+                                text: "seconds";
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                    HorizontalLayout {
+                        z:-45;
+                        padding-bottom: 4rem;
+                        padding-left: 17.2rem;
+                        invalidStartTimeFormatError := Text {
+                            text: "⚠ Invalid start time format";
+                            color: red;
+                            visible: onlyEncodeSegmentCheckBox.checked
+                                && onlyEncodeFromLineEdit.text != ""
+                                && !root.encode_from_string_is_valid;
+                        }
+                    }
+                    HorizontalBox {
+                        alignment: center;
+                        VerticalBox {
+                            alignment: space-around;
+                            encodeButton := Button {
+                                primary: true;
+                                text: "Encode";
+                                width: 200px;
+                                height: 150px;
+                                enabled: root.canStartEncoding && !root.encoding
+                                    && !invalidStartTimeFormatError.visible
+                                    && (!onlyEncodeSegmentCheckBox.checked || (onlyEncodeFromLineEdit.text != "" && onlyEncodeForLineEdit.text != ""));
+                                clicked => {
+                                    root.encode_clicked();
+                                }
+                            }
+                            cancelButton := Button {
+                                text: "Cancel";
+                                width: 200px;
+                                height: 50px;
+                                enabled: root.encoding;
+                                clicked => {
+                                    root.cancel_clicked()
+                                }
+                            }
+                        }
+                    }
+                    // Spacer
+                    Rectangle {}
+
+                    HorizontalBox {
+                        alignment: start;
+                        Text {
+                            text: "Status:";
+                        }
+
+                        Text {
+                            text: root.status;
+                        }
+                    }
+
+                    if root.ffmpegError != "": ffmpegErrorBox := HorizontalBox {
+                        //alignment: start;
+                        Text {
+                            text : "⚠";
+                            color: red;
+                            font-size: root.default-font-size * 2;
+                            vertical-alignment: center;
+                        }
+                        ffmpegErrorText := TextEdit {
+                            text : "ffmpeg: " + root.ffmpegError;
+                            width: parent.width * 0.95;
+                            height: 6rem;
+                            read-only: true;
+                            wrap: word-wrap;
+                        }
+                    }
+ 
+                    HorizontalBox {
+                        // progressIndicator is in HorizontalBox so that it aligns with status
+                        // messages.
+                        progressIndicator := ProgressIndicator {
+                            progress: root.progress;
+                            min-height: 10px;
+                        }
+                    }
+
+                    HorizontalBox {
+                        alignment: space-between;
+                        Text {
+                            text: root.remainingTime == "00:00:00" ? "Time: \{root.elapsedTime} / ???" : "Time: \{root.elapsedTime} / \{root.remainingTime}";
+                        }
+                        fpsText := Text {
+                            text: "\{root.encodingFps} frames/second";
+                        }
+                    }
+                }
+            }
+        }
+
+        HorizontalLayout {
+            z: -50;
+            alignment: root.showSettings ? space-between: end;
+            height: 70px;
+
+            VerticalBox {
+                visible: root.showSettings;
+                alignment: end;
+                Text {
+                    text: "Ravioni \{root.version}";
+                    horizontal-alignment: left;
+                    vertical-alignment: top;
+                }
+                ToolTipArea {
+                    text : "Resets all settings in all tabs. Recreates the state of when you opened"
+                    + " this application for the first time.";
+                    window-width: root.width;
+                    y-offset: -9rem;
+                    Button {
+                        text: "Reset all settings";
+                        clicked => {
+                            root.reset_all_settings_clicked()
+                        }
+                    }
+                }
+            }
+
+            VerticalBox {
+                visible: root.showSettings;
+                alignment: end;
+                darkModeSwitch := Switch {
+                    text: @tr("Dark mode");
+                    checked: root.darkMode;
+                    toggled => {
+                        setDarkMode(self.checked);
+                        root.dark_mode_toggled(self.checked);
+                    }
+                }
+
+                advancedSettingsSwitch := Switch {
+                    text: "Advanced settings";
+                    toggled => {
+                        root.advanced_settings_toggled(self.checked);
+                    }
+                }
+            }
+            VerticalBox {
+                alignment:end;
+                settingsButton := Button {
+                    text : "⚙";
+                      checkable: true;
+                }
+                }
+        }
+    }
+}

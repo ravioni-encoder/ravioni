@@ -1,0 +1,36 @@
+[package]
+name = "ravioni"
+version = "0.8.0"
+edition = "2021"
+
+[dependencies]
+
+ffmpeg-sidecar = "2.0.2"
+anyhow = "1"
+slint = "1.11.0"
+rfd = "0.15"
+chrono = "0.4"
+log = "0.4.22"
+env_logger = "0.11.5"
+dirs = "6.0.0"
+serde = "1.0.210"
+toml = "0.8.19"
+serial_test = "3.1.1"
+isolang = { version = "2.4.0", features = [
+    "english_names",
+    "lowercase_names",
+    "local_names",
+    "list_languages",
+] }
+regex = "1.11.1"
+rand = "0.9.1"
+whatlang = "0.16.4"
+
+
+[build-dependencies]
+slint-build = "1.11.0"
+
+
+[dev-dependencies]
+mockall = "0.13.0"
+tempfile = "3.12.0"

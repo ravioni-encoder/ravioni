@@ -1,0 +1,51 @@
+// cSpell Settings
+{
+    // Version of the setting file.  Always 0.2
+    "version": "0.2",
+    // language - current active spelling language
+    "language": "en",
+    // words - list of words to be always considered correct
+    "words": [
+        "aformat",
+        "autocrop",
+        "bitrates",
+        "bluray",
+        "chrono",
+        "cropdetect",
+        "denoise",
+        "Deque",
+        "Deutsch",
+        "direnv",
+        "Disableable",
+        "downmix",
+        "downmixed",
+        "downmixing",
+        "Français",
+        "githubusercontent",
+        "hlayout",
+        "isolang",
+        "libopus",
+        "libsvtav",
+        "matroska",
+        "mkdirp",
+        "mkhl",
+        "mockall",
+        "POSIX",
+        "ravioni",
+        "serde",
+        "slint",
+        "Slint",
+        "spinboxes",
+        "startable",
+        "streetsidesoftware",
+        "subdir",
+        "subdirectories",
+        "svtav1",
+        "tempdir",
+        "tempfile",
+        "visualstudio",
+        "Vorbis",
+        "whatlang",
+        "Xiph's"
+    ]
+}
