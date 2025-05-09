@@ -347,7 +347,7 @@ export component MainWindow inherits Window {
     in property <float> encodingFps;
     in property <string> status;
     in property <string> elapsedTime;
-    in property <string> remainingTime;
+    in property <string> totalTime;
     callback collect_progress;
     callback collect_finished;
     callback update_job_times;
@@ -1073,7 +1073,7 @@ export component MainWindow inherits Window {
                     HorizontalBox {
                         alignment: space-between;
                         Text {
-                            text: root.remainingTime == "00:00:00" ? "Time: \{root.elapsedTime} / ???" : "Time: \{root.elapsedTime} / \{root.remainingTime}";
+                            text: root.totalTime == "00:00:00" && root.encoding ? "Time: \{root.elapsedTime} / ???" : "Time: \{root.elapsedTime} / \{root.totalTime}";
                         }
                         fpsText := Text {
                             text: "\{root.encodingFps} frames/second";

@@ -558,12 +558,12 @@ impl Model {
     /// Updates times in the UI. Is called once a second - more often than the progress indicator.
     pub fn update_job_times(&mut self) {
         let elapsed_time = duration_to_shared_string(&self.current_job.elapsed_time());
-        let remaining_time = duration_to_shared_string(&self.current_job.total_time());
+        let total_time = duration_to_shared_string(&self.current_job.total_time());
 
         self.ui_weak
             .upgrade_in_event_loop(move |ui| {
                 ui.set_elapsedTime(elapsed_time);
-                ui.set_remainingTime(remaining_time);
+                ui.set_totalTime(total_time);
             })
             .unwrap();
     }
