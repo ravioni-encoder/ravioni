@@ -364,7 +364,7 @@ impl Model {
         let ui_weak_clone = self.ui_weak.clone();
 
         thread::spawn(move || {
-            let maybe_metadata = ffmpeg::detect_metadata(&file_path_string);
+            let maybe_metadata = ffmpeg::extract_metadata(&file_path_string);
             tx.send(maybe_metadata).unwrap();
             ui_weak_clone
                 .upgrade_in_event_loop(move |ui| {
@@ -541,7 +541,7 @@ impl Model {
     // update_job_times() and update_progress_of_current_job() are called independently.
     pub fn update_progress_of_current_job(&mut self, current_frame: i32, current_fps: f32) {
         debug!(
-            "update_progress(): called with current_frame {current_frame} and fps {current_fps}."
+            "update_progress(): Called with current_frame {current_frame} and fps {current_fps}."
         );
         self.current_job.current_fps = current_fps;
         self.current_job.current_frame = current_frame;

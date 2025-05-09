@@ -37,8 +37,6 @@ pub fn encode(
     stopped_tx: Sender<(job::JobStatus, String)>,
     quit_rx: Receiver<()>,
 ) {
-    debug!("encode(): Entering");
-
     let output_file_path = &job.paths.output_file;
     let mut encoder = FfmpegCommand::new()
         .hide_banner()
@@ -81,7 +79,7 @@ pub fn encode(
 
     debug!("encode(): About to spawn thread for events.");
     thread::spawn(move || {
-        debug!("encode(): Started thread for events.");
+        debug!("encode(): Inside thread for events.");
         for event in events {
             if quit_rx.try_recv().is_ok() {
                 debug!("encode(): Received quit signal. Quitting.");
@@ -95,8 +93,9 @@ pub fn encode(
                     error!("{}", e);
                     // FLAW: Only returns the first error from ffmpeg. For multiline errors, the
                     // actually returned line might not be informative to the user. Ffmpeg errors
-                    // should never occur, so this is tolerable. Also, order of consecutive error
-                    // events is not deterministic, i.e. differs from run to run for the same error.
+                    // should never occur, so this is tolerable. Also, the order of consecutive
+                    // error events is not deterministic, i.e. differs from run to run for the same
+                    // error.
                     stopped_tx.send((job::JobStatus::Failed, e)).unwrap();
                 }
                 FfmpegEvent::Progress(p) => {
@@ -133,12 +132,9 @@ pub fn encode(
     });
 }
 
-/// Detects metadata such as duration, fps, streams and more of the file in the given path.
-pub fn detect_metadata(file_path_str: &str) -> anyhow::Result<InputFileMetadata> {
-    debug!(
-        "detect_metadata(): Will now scan {} for metadata.",
-        file_path_str
-    );
+/// Extracts metadata such as duration, fps, streams and more of the file in the given path.
+pub fn extract_metadata(file_path_str: &str) -> anyhow::Result<InputFileMetadata> {
+    debug!("About to extract metadata from {}.", file_path_str);
     let mut ffmpeg = FfmpegCommand::new()
         .input(file_path_str)
         .spawn()
@@ -190,7 +186,7 @@ pub fn detect_metadata(file_path_str: &str) -> anyhow::Result<InputFileMetadata>
 
     if let (Some(fps), Some(duration), Some(width), Some(height)) = (fps, duration, width, height) {
         debug!(
-            "detect_metadata(): Detected fps {}, duration {:?}, width {} and height {} from file {}.",
+            "extract_metadata(): Detected fps {}, duration {:?}, width {} and height {} from file {}.",
             fps, duration, width, height, file_path_str
         );
         Ok(InputFileMetadata {
@@ -204,7 +200,7 @@ pub fn detect_metadata(file_path_str: &str) -> anyhow::Result<InputFileMetadata>
         })
     } else {
         bail!(
-            "detect_metadata(): Failed to detect metadata from {}.",
+            "extract_metadata(): Failed to extract metadata from {}.",
             file_path_str
         )
     }
@@ -216,7 +212,7 @@ pub fn detect_metadata(file_path_str: &str) -> anyhow::Result<InputFileMetadata>
 /// NUMBER_OF_TIME_POINTS_TO_CHECK_FOR_CROP_DETECTION.
 pub fn autodetect_crop_parameters(file_path_str: &str) -> anyhow::Result<(u32, u32, u32, u32)> {
     // Get metadata of input file to know the total duration.
-    let input_file_metadata = detect_metadata(file_path_str)?;
+    let input_file_metadata = extract_metadata(file_path_str)?;
     let time_codes = random_time_codes_within_range(
         input_file_metadata.duration,
         CROP_DETECT_NUMBER_OF_TIME_POINTS,
