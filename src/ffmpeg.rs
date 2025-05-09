@@ -206,7 +206,7 @@ pub fn extract_metadata(file_path_str: &str) -> anyhow::Result<InputFileMetadata
     }
 }
 
-/// Autodetect crop parameters at random time positions of the input video.
+/// Autodetects crop parameters at random time positions of the input video.
 ///
 /// Use the least crop (biggest dimensions) found. The number of time positions is defined by
 /// NUMBER_OF_TIME_POINTS_TO_CHECK_FOR_CROP_DETECTION.
@@ -292,7 +292,7 @@ fn extract_crop_parameters(string: &str) -> Option<(u32, u32, u32, u32)> {
     })
 }
 
-/// From a collection of cropped parameters select the ones that crop the video the least, i.e.
+/// From a collection of cropped parameters selects the ones that crop the video the least, i.e.
 /// leave the biggest image.
 ///
 /// Some movies have segments with open matte which would otherwise be cut off.
@@ -318,7 +318,7 @@ fn select_least_cropped_parameters(
     Some((max_width, max_height, x_offset, y_offset))
 }
 
-/// Return random time codes within the given duration (interpreted as time code). Do not return
+/// Returns random time codes within the given duration (interpreted as time code). Does not return
 /// more time codes than there are seconds in the given duration.
 ///
 /// For example, when given time_code 00:10:00 (ten minutes) and n=4 could return 00:01:20,

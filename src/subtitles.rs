@@ -66,8 +66,8 @@ pub fn gather_subtitle_file_paths_in(
     Ok(subtitles)
 }
 
-/// Detect whether a subtitle file are SDH (subtitles for the Deaf and hard of hearing) or a
-/// normal subtitle file.
+/// Detects whether a subtitle file contains SDH (subtitles for the Deaf and hard of hearing) or
+/// normal dialogue.
 pub fn detect_type_of_subtitle_file_type(path: &Path) -> SubTitleType {
     if let Some(file_stem) = path.file_stem().and_then(|s| s.to_str()) {
         let parts: Vec<String> = split_by_non_letters(file_stem)
@@ -87,7 +87,7 @@ pub fn detect_type_of_subtitle_file_type(path: &Path) -> SubTitleType {
     SubTitleType::Normal
 }
 
-/// Detect the language of the given subtitle file by analyzing its dialogue.
+/// Detects the language of the given subtitle file by analyzing its dialogue.
 pub fn detect_language_of_subtitle_file(path: impl AsRef<Path>) -> Result<Language> {
     let path: &Path = path.as_ref();
     let text = match path.extension().and_then(|extension| extension.to_str()) {
@@ -116,7 +116,7 @@ fn detect_language_from_string(text: &str) -> Result<Language> {
     })
 }
 
-// Extract only the dialogue from the given srt file without any metadata.
+// Extracts only the dialogue text from the given srt file without any metadata.
 fn extract_dialogue_from_srt_file(file_path: impl AsRef<Path>) -> Result<String> {
     let file_path = file_path.as_ref();
 
@@ -141,6 +141,7 @@ fn extract_dialogue_from_srt_file(file_path: impl AsRef<Path>) -> Result<String>
     }
 }
 
+/// Returns an iterator over the lines of the given file.
 fn read_lines(file_path: impl AsRef<Path>) -> io::Result<io::Lines<io::BufReader<File>>> {
     let file = File::open(file_path)?;
     Ok(io::BufReader::new(file).lines())
