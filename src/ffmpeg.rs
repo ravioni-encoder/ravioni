@@ -10,7 +10,7 @@ use ffmpeg_sidecar::{
     command::FfmpegCommand,
     event::{FfmpegEvent, LogLevel},
 };
-use log::{debug, error};
+use log::{debug, error, warn};
 use rand::Rng;
 use regex::Regex;
 use slint::Weak;
@@ -110,7 +110,12 @@ pub fn encode(
                         })
                         .unwrap();
                 }
-                FfmpegEvent::Error(e) => error!("{}", e),
+                // Ffmpeg sidecar yields errors that are more like warnings for us. But still print
+                // them to watch for potential bugs.
+                FfmpegEvent::Error(e) => warn!(
+                    "(likely benign) FfmpegEvent::Error event from sidecar: {}",
+                    e
+                ),
                 _ => {}
             }
         }
