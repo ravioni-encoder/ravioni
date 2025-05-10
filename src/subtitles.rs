@@ -114,7 +114,7 @@ pub fn detect_language_of_subtitle_file(path: impl AsRef<Path>) -> Result<Langua
         _ => return Err(anyhow!("No (recognizable) subtitle file extension.")),
     };
 
-    return detect_language_from_string(&text);
+    detect_language_from_string(&text)
 }
 
 fn detect_language_from_string(text: &str) -> Result<Language> {
