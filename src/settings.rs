@@ -319,7 +319,7 @@ pub struct AudioSettings {
 
 impl AudioSettings {
     pub fn bitrate_for_layout(&self, channel_layout: &AudioChannelLayout) -> OpusBitrate {
-        let bitrate = match channel_layout {
+        match channel_layout {
             AudioChannelLayout::Mono => self.bitrate_2_0 / 2,
             AudioChannelLayout::Stereo20 => self.bitrate_2_0,
             AudioChannelLayout::Surround51 | AudioChannelLayout::Surround51Side => {
@@ -336,8 +336,7 @@ impl AudioSettings {
                     self.bitrate_7_1
                 }
             }
-        };
-        bitrate
+        }
     }
 
     /// Return whether the given codec should be re-encoded according to the current AudioSettings.
