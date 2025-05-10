@@ -19,7 +19,7 @@ static SUBTITLE_EXTENSIONS: [&str; 4] = ["srt", "ass", "ssa", "idx"];
 #[derive(Debug, Clone, PartialEq)]
 pub enum SubTitleType {
     Normal,
-    SDH,
+    Sdh,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -99,7 +99,7 @@ pub fn detect_type_of_subtitle_file_type(path: &Path) -> SubTitleType {
             .any(|part| matches!(part.as_str(), "sdh" | "cc"))
             || (parts.contains(&"hearing".to_string()) && parts.contains(&"impaired".to_string()))
         {
-            return SubTitleType::SDH;
+            return SubTitleType::Sdh;
         }
     }
     SubTitleType::Normal
