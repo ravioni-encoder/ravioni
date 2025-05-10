@@ -97,7 +97,8 @@ impl PathSettings {
             .output_file
             .parent()
             .context("Output file path has no directory (parent).")?;
-        return Ok(parent.join(input_filename));
+
+        Ok(parent.join(input_filename))
     }
 }
 
@@ -123,11 +124,11 @@ impl Av1Crf {
         if (Self::MIN..=Self::MAX).contains(&value) {
             Ok(Self(value))
         } else {
-            return Err(anyhow!(
+            Err(anyhow!(
                 "AV1 crf must be between {} and {}.",
                 Self::MIN,
                 Self::MAX
-            ));
+            ))
         }
     }
 
@@ -147,11 +148,11 @@ impl Av1Preset {
         if (Self::MIN..=Self::MAX).contains(&value) {
             Ok(Self(value))
         } else {
-            return Err(anyhow!(
+            Err(anyhow!(
                 "AV1 preset must be between {} and {}.",
                 Self::MIN,
                 Self::MAX
-            ));
+            ))
         }
     }
 
@@ -282,11 +283,11 @@ impl OpusBitrate {
         if (Self::MIN..=Self::MAX).contains(&value) {
             Ok(Self(value))
         } else {
-            return Err(anyhow!(
+            Err(anyhow!(
                 "Opus bitrate must be between {} and {}.",
                 Self::MIN,
                 Self::MAX
-            ));
+            ))
         }
     }
 

@@ -119,7 +119,6 @@ impl Model {
                     .assert_that_input_file_is_ready_for_encoding()
                 {
                     ui.set_inputFileError(err.to_string().into());
-                    return;
                 } else {
                     // Spawn metadata thread.
                     self.retrieve_input_file_metadata();
