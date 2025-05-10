@@ -32,5 +32,6 @@ slint-build = "1.11.0"
 
 
 [dev-dependencies]
+indoc = "2.0.6"
 mockall = "0.13.0"
 tempfile = "3.12.0"

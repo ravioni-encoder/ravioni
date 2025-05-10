@@ -141,7 +141,7 @@ fn extract_dialogue_from_srt_file(file_path: impl AsRef<Path>) -> Result<String>
     if let Ok(lines) = read_lines(file_path) {
         let mut text = String::new();
 
-        for line in lines.flatten() {
+        for line in lines.map_while(Result::ok) {
             if !line.trim().is_empty()
                 && !line.chars().all(char::is_numeric)
                 && !line.contains("-->")
@@ -168,10 +168,10 @@ fn read_lines(file_path: impl AsRef<Path>) -> io::Result<io::Lines<io::BufReader
 #[cfg(test)]
 mod tests {
     use super::*;
+    use indoc::indoc;
     use std::fs::File;
-    use tempfile::tempdir;
-
     use std::io::Write;
+    use tempfile::tempdir;
 
     #[test]
     fn no_subtitles_are_found_in_empty_directory() {
@@ -303,5 +303,31 @@ mod tests {
         .unwrap();
         let dialogue = extract_dialogue_from_srt_file(&file_path).unwrap();
         assert_eq!(dialogue, "Hello World!");
+    }
+
+    #[test]
+    fn str_dialogue_extraction_reads_more_than_one_line() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("multi_line.srt");
+        let mut file = File::create(&file_path).unwrap();
+
+        let srt_content = indoc! {r#"
+            1
+            00:00:01,000 --> 00:00:02,000
+            Hello there!
+
+            2
+            00:00:03,000 --> 00:00:04,000
+            How are you?
+
+            3
+            00:00:05,000 --> 00:00:06,000
+            Goodbye!
+        "#};
+
+        write!(file, "{}", srt_content).unwrap();
+
+        let dialogue = extract_dialogue_from_srt_file(&file_path).unwrap();
+        assert_eq!(dialogue, "Hello there! How are you? Goodbye!");
     }
 }
