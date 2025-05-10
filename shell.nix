@@ -44,4 +44,7 @@ pkgs.mkShell {
     ]
   );
   LD_LIBRARY_PATH = libPath;
+
+  # Print log up to debug level during execution of Ravioni.
+  RUST_LOG = "debug";
 }
