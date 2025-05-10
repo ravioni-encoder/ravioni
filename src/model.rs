@@ -374,7 +374,7 @@ impl Model {
     }
 
     /// Spawn a worker thread to retrieve crop dimensions.
-
+    ///
     /// The spawned thread uses ffmpeg to autodetect crop dimensions from the video stream. The
     /// channel created here is persisted in the model for [`Model::collect_crop_data()] to use
     /// later.
