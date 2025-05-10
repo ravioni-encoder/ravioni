@@ -1,5 +1,3 @@
-use std::cmp::max;
-use std::cmp::min;
 use std::default::Default;
 use std::fmt;
 use std::fs;
@@ -301,9 +299,9 @@ impl Div<u32> for OpusBitrate {
 
     fn div(self, right: u32) -> Self::Output {
         assert!(right != 0, "division by zero");
-        // Force new bitrate to be within bounds. This operator is used for calculating th Mono
+        // Force new bitrate to be within bounds. This operator is used for calculating the Mono
         // bitrate. Results don't have to be precise and fault-tolerance is more important.
-        let new_value = min(max(self.0 / right, OpusBitrate::MIN), OpusBitrate::MAX);
+        let new_value = (self.0 / right).clamp(OpusBitrate::MIN, OpusBitrate::MAX);
         OpusBitrate(new_value)
     }
 }
@@ -576,6 +574,26 @@ mod tests {
                 .value(),
             96
         );
+    }
+
+    #[test]
+    fn mono_audio_channel_bitrate_is_half_of_stereo_bitrate() {
+        let audio_settings = AudioSettings {
+            bitrate_2_0: OpusBitrate::new(256).unwrap(),
+            bitrate_5_1: OpusBitrate::new(400).unwrap(),
+            bitrate_7_1: OpusBitrate::new(500).unwrap(),
+            downmix_5_1_to_stereo: false,
+            downmix_7_1_to_stereo: false,
+            volume_adjustment: 100,
+            re_encode_good_audio_codecs: false,
+            copy: false,
+        };
+
+        let mono_bitrate = audio_settings
+            .bitrate_for_layout(&AudioChannelLayout::Mono)
+            .value();
+
+        assert_eq!(mono_bitrate, 128);
     }
 
     #[test]
