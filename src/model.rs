@@ -548,7 +548,7 @@ impl Model {
 
         self.ui_weak
             .upgrade_in_event_loop(move |ui| {
-                ui.set_encodingFps(current_fps.clone());
+                ui.set_encodingFps(current_fps);
                 ui.set_progress(progress);
             })
             .unwrap();
