@@ -13,7 +13,6 @@ mod subtitles;
 use std::{cell::RefCell, path::PathBuf, rc::Rc, time::Duration};
 
 use anyhow::Result;
-use env_logger;
 use log::debug;
 use settings::{Av1Crf, Av1Preset, OpusBitrate, Settings};
 
