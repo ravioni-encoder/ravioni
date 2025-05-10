@@ -344,11 +344,8 @@ fn random_time_codes_within_range(time_code: Duration, n: u32) -> Vec<Duration> 
 /// Mappings must be given to ffmpeg explicitly because by default ffmpeg only maps (forwards)
 /// one stream of each type (video, audio, subtitle) from the input file to the output file.
 pub fn args_for_video_maps() -> Vec<String> {
-    let mut args: Vec<String> = Vec::new();
     // Assume that there is exactly one video stream and that it is the first stream.
-    args.push("-map".to_string());
-    args.push("v:0".to_string());
-    args
+    vec!["-map".to_string(), "v:0".to_string()]
 }
 
 /// Creates arguments for ffmpeg that explicitly map (forward) all audio streams.
@@ -399,9 +396,9 @@ pub fn args_for_audio_codecs(job: &Job) -> Vec<String> {
             .audio
             .should_re_encode(audio_stream.codec.as_str())
         {
-            args.push(format!("libopus"));
+            args.push("libopus".to_owned());
         } else {
-            args.push(format!("copy"));
+            args.push("copy".to_owned());
         }
     }
 
