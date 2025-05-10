@@ -72,8 +72,8 @@ impl Model {
             .application
             .last_input_directory
             .clone()
-            .or_else(|| dirs::video_dir())
-            .or_else(|| dirs::home_dir())
+            .or_else(dirs::video_dir)
+            .or_else(dirs::home_dir)
             .unwrap_or_default();
 
         if let Some(input_file_path) = FileDialog::new()
@@ -157,8 +157,8 @@ impl Model {
             .last_output_directory
             .clone()
             .or_else(|| self.settings.application.last_input_directory.clone())
-            .or_else(|| dirs::video_dir())
-            .or_else(|| dirs::home_dir())
+            .or_else(dirs::video_dir)
+            .or_else(dirs::home_dir)
             .unwrap_or_default();
 
         // Prepare input filename as suggestion for the output filename.
