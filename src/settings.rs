@@ -365,38 +365,18 @@ impl Default for AudioSettings {
 
 //
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncodingSettings {
     pub video: VideoSettings,
     pub audio: AudioSettings,
 }
 
-impl Default for EncodingSettings {
-    fn default() -> Self {
-        Self {
-            video: VideoSettings::default(),
-            audio: AudioSettings::default(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ApplicationSettings {
     pub last_input_directory: Option<PathBuf>,
     pub last_output_directory: Option<PathBuf>,
     pub dark_mode: bool,
     pub advanced_settings: bool,
-}
-
-impl Default for ApplicationSettings {
-    fn default() -> Self {
-        Self {
-            last_input_directory: None,
-            last_output_directory: None,
-            dark_mode: false,
-            advanced_settings: false,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
