@@ -32,7 +32,7 @@ pub struct Model {
     // Channel used by the ffmpeg thread to send input file metadata back to the main thread.
     input_file_metadata_rx: Option<Receiver<Result<InputFileMetadata>>>,
     // Channel used by the ffmpeg thread to send cropdetect data back to the main thread.
-    cropdetect_rx: Option<Receiver<Result<(u32, u32, u32, u32)>>>,
+    cropdetect_rx: Option<Receiver<Result<ffmpeg::CropRegion>>>,
 }
 
 impl Model {

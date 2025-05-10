@@ -29,6 +29,8 @@ static CROP_DETECT_NUMBER_OF_TIME_POINTS: u32 = 12;
 // For how long (in seconds) to analyze frames for crop detection at each time point.
 static CROP_DETECT_DURATION_AT_TIME_POINT: &str = "0.2";
 
+pub type CropRegion = (u32, u32, u32, u32);
+
 /// Encodes given job and sends progress and final status back through the given channels.
 pub fn encode(
     ui_weak: Weak<MainWindow>,
@@ -210,7 +212,7 @@ pub fn extract_metadata(file_path_str: &str) -> anyhow::Result<InputFileMetadata
 ///
 /// Use the least crop (biggest dimensions) found. The number of time positions is defined by
 /// NUMBER_OF_TIME_POINTS_TO_CHECK_FOR_CROP_DETECTION.
-pub fn autodetect_crop_parameters(file_path_str: &str) -> anyhow::Result<(u32, u32, u32, u32)> {
+pub fn autodetect_crop_parameters(file_path_str: &str) -> anyhow::Result<CropRegion> {
     // Get metadata of input file to know the total duration.
     let input_file_metadata = extract_metadata(file_path_str)?;
     let time_codes = random_time_codes_within_range(
@@ -226,7 +228,7 @@ pub fn autodetect_crop_parameters(file_path_str: &str) -> anyhow::Result<(u32, u
             .join(", ")
     );
 
-    let mut crop_parameters: Vec<(u32, u32, u32, u32)> = Vec::new();
+    let mut crop_parameters: Vec<CropRegion> = Vec::new();
     for time_code in time_codes {
         debug!(
             "Now autodetecting at time code {}",
@@ -277,7 +279,7 @@ pub fn autodetect_crop_parameters(file_path_str: &str) -> anyhow::Result<(u32, u
     Ok(least_cropped_parameters)
 }
 
-fn extract_crop_parameters(string: &str) -> Option<(u32, u32, u32, u32)> {
+fn extract_crop_parameters(string: &str) -> Option<CropRegion> {
     CROP_DETECT_REGEX.captures(string).map(|caps| {
         (
             // width
@@ -296,10 +298,8 @@ fn extract_crop_parameters(string: &str) -> Option<(u32, u32, u32, u32)> {
 /// leave the biggest image.
 ///
 /// Some movies have segments with open matte which would otherwise be cut off.
-fn select_least_cropped_parameters(
-    crop_parameters: Vec<(u32, u32, u32, u32)>,
-) -> Option<(u32, u32, u32, u32)> {
-    if crop_parameters.len() == 0 {
+fn select_least_cropped_parameters(crop_parameters: Vec<CropRegion>) -> Option<CropRegion> {
+    if crop_parameters.is_empty() {
         return None;
     }
     let (mut max_width, mut max_height) = (0, 0);
