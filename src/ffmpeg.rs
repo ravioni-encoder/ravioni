@@ -465,7 +465,7 @@ pub fn args_for_external_subtitles_maps(job: &Job) -> Vec<String> {
         }
 
         // -metadata:s:3 title="SDH"
-        if subtitle_file.kind == SubTitleType::SDH {
+        if subtitle_file.kind == SubTitleType::Sdh {
             args.push(format!("-metadata:s:{}", next_free_stream_index));
             args.push("title=SDH".to_string());
         }
