@@ -24,21 +24,6 @@ Simple AV1 encoder GUI inspired by [Aviator](https://github.com/gianni-rosato/av
 3. navigate to main folder (where Cargo.toml is located)
 4. `$ cargo run` (as normal user)
 
-## Development
-
-### NixOS
-
-The shell.nix file will create an environment with all dependencies if you enter the project folder
-and run `nix-shell shell.nix`. The recommended extension mkhl.direnv will do this for VSCode
-automatically.
-
-
-#### What are files for?
-
-* shell.nix: Creates environment on Nix.
-* rust-toolchain.toml: Specifies which Rust version to use. Needed for the environment created by
-  shell.nix.
-
 ## Known Limitations
 
 * Will only recognize and encode the first video stream of the input file.
