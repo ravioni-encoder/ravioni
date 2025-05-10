@@ -514,15 +514,14 @@ impl Settings {
         let file_path = Settings::config_file_path();
         let parent_directory = file_path
             .parent()
-            .expect(format!("Failed to get parent of {:?}.", file_path).as_str());
+            .unwrap_or_else(|| panic!("Failed to get parent of {:?}.", file_path));
         if !parent_directory.exists() {
-            fs::create_dir_all(parent_directory).expect(
-                format!(
+            fs::create_dir_all(parent_directory).unwrap_or_else(|_| {
+                panic!(
                     "Failed to create config directory {:?} and it does not exist.",
                     parent_directory
                 )
-                .as_str(),
-            );
+            });
         }
         fs::write(&file_path, toml.clone()).expect("Unable to write config file.");
         debug!("Wrote settings to file {:?}. Content: {toml}", file_path);
