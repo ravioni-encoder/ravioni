@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
 use std::io;
@@ -42,11 +43,11 @@ pub fn gather_subtitle_file_paths_in(
     directory: &Path,
     recursion_depth: u32,
 ) -> Result<Vec<PathBuf>, io::Error> {
-    let mut subtitles = Vec::new();
-
-    if recursion_depth <= 0 {
-        return Ok(subtitles);
+    if recursion_depth == 0 {
+        return Ok(Vec::new());
     }
+
+    let mut subtitles = Vec::new();
 
     for entry in fs::read_dir(directory)? {
         let path = entry?.path();
@@ -55,12 +56,29 @@ pub fn gather_subtitle_file_paths_in(
             subtitles.append(&mut gather_subtitle_file_paths_in(
                 &path,
                 recursion_depth - 1,
-            )?)
-        } else if let Some(extension) = path.extension().and_then(|ext| ext.to_str()) {
-            if SUBTITLE_EXTENSIONS.contains(&extension) {
-                subtitles.push(path);
+            )?);
+            continue;
+        }
+
+        let Some(ext) = path.extension().and_then(OsStr::to_str) else {
+            continue;
+        };
+        if !SUBTITLE_EXTENSIONS.contains(&ext) {
+            continue;
+        }
+
+        // If the current file has extension .idx check that the corresponding .sub file
+        // with the same stem exists, too. If not, this is not a valid subtitle pair and
+        // ignore it.
+        if ext == "idx" {
+            let mut sub_path = path.clone();
+            sub_path.set_extension("sub");
+            if !sub_path.exists() {
+                continue;
             }
         }
+
+        subtitles.push(path);
     }
 
     Ok(subtitles)
@@ -174,20 +192,29 @@ mod tests {
     }
 
     #[test]
-    fn multiple_subtitles_are_found_in_directory() {
+    fn sub_extension_subtitle_file_is_not_added_to_gathered_files() {
+        // Only the .idx file should be collected because this is the only file path that passed to
+        // ffmpeg.
         let dir = tempdir().unwrap();
-        let first_srt_file_path = dir.path().join("de.srt");
-        let second_srt_file_path = dir.path().join("en.srt");
-        let first_idx_file_path = dir.path().join("subs.idx");
-        File::create(&first_srt_file_path).unwrap();
-        File::create(&second_srt_file_path).unwrap();
+        let first_idx_file_path = dir.path().join("the_movie.idx");
+        let first_sub_file_path = dir.path().join("the_movie.sub");
+        File::create(&first_idx_file_path).unwrap();
+        File::create(&first_sub_file_path).unwrap();
+
+        let subtitle_file_paths = gather_subtitle_file_paths_in(dir.path(), 5).unwrap();
+        assert_eq!(subtitle_file_paths.len(), 1);
+        assert!(subtitle_file_paths.contains(&first_idx_file_path));
+        assert!(!subtitle_file_paths.contains(&first_sub_file_path));
+    }
+
+    #[test]
+    fn idx_subtitle_file_without_corresponding_sub_subtitle_file_is_ignored() {
+        let dir = tempdir().unwrap();
+        let first_idx_file_path = dir.path().join("the_movie.idx");
         File::create(&first_idx_file_path).unwrap();
 
         let subtitle_file_paths = gather_subtitle_file_paths_in(dir.path(), 5).unwrap();
-        assert_eq!(subtitle_file_paths.len(), 3);
-        assert!(subtitle_file_paths.contains(&first_srt_file_path));
-        assert!(subtitle_file_paths.contains(&second_srt_file_path));
-        assert!(subtitle_file_paths.contains(&first_idx_file_path));
+        assert_eq!(subtitle_file_paths.len(), 0);
     }
 
     #[test]
@@ -198,6 +225,25 @@ mod tests {
 
         let results = gather_subtitle_file_paths_in(dir.path(), 5).unwrap();
         assert!(results.is_empty());
+    }
+
+    #[test]
+    fn multiple_subtitles_are_found_in_directory() {
+        let dir = tempdir().unwrap();
+        let first_srt_file_path = dir.path().join("de.srt");
+        let second_srt_file_path = dir.path().join("en.srt");
+        let first_idx_file_path = dir.path().join("the_movie.idx");
+        let first_sub_file_path = dir.path().join("the_movie.sub");
+        File::create(&first_srt_file_path).unwrap();
+        File::create(&second_srt_file_path).unwrap();
+        File::create(&first_idx_file_path).unwrap();
+        File::create(&first_sub_file_path).unwrap();
+
+        let subtitle_file_paths = gather_subtitle_file_paths_in(dir.path(), 5).unwrap();
+        assert_eq!(subtitle_file_paths.len(), 3);
+        assert!(subtitle_file_paths.contains(&first_srt_file_path));
+        assert!(subtitle_file_paths.contains(&second_srt_file_path));
+        assert!(subtitle_file_paths.contains(&first_idx_file_path));
     }
 
     #[test]
