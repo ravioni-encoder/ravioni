@@ -871,7 +871,6 @@ export component MainWindow inherits Window {
 
                                         }
                                         Text {
-                                            padding-left: 1rem;
                                             text: "%";
                                             vertical-alignment: center;
                                         }
@@ -952,7 +951,6 @@ export component MainWindow inherits Window {
 
                             onlyEncodeSegmentCheckBox := CheckBox {
                                 text: "Only encode segment from";
-                                padding-right: 0;
                                 toggled => {
                                    root.only_encode_segment_toggled(self.checked);
                                 }
@@ -1045,7 +1043,6 @@ export component MainWindow inherits Window {
                     }
 
                     if root.ffmpegError != "": ffmpegErrorBox := HorizontalBox {
-                        //alignment: start;
                         Text {
                             text : "⚠";
                             color: red;
@@ -1054,7 +1051,6 @@ export component MainWindow inherits Window {
                         }
                         ffmpegErrorText := TextEdit {
                             text : "ffmpeg: " + root.ffmpegError;
-                            width: parent.width * 0.95;
                             height: 6rem;
                             read-only: true;
                             wrap: word-wrap;
