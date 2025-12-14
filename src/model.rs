@@ -49,7 +49,10 @@ impl Model {
         };
 
         // Apply configuration from settings file to self.
-        model.set_input_file(model.current_job.paths.input_file.clone());
+
+        // Don't sync output file at this point, because the output file will be read from the
+        // current job
+        model.set_input_file(model.current_job.paths.input_file.clone(), false);
         model.set_output_file(model.current_job.paths.output_file.clone());
         model.write_path_settings_to_ui();
         model.write_encoding_settings_to_ui();
@@ -85,13 +88,13 @@ impl Model {
             self.settings.application.last_input_directory =
                 input_file_path.parent().map(PathBuf::from);
 
-            self.set_input_file(input_file_path.clone());
+            self.set_input_file(input_file_path.clone(), true);
         }
     }
 
     /// Sets the given path as the input file. Updates the model's state and the UI and performs
     /// error checks.
-    pub fn set_input_file(&mut self, file_path: PathBuf) {
+    pub fn set_input_file(&mut self, file_path: PathBuf, output_sync_enabled: bool) {
         // Set in model
         self.current_job.paths.input_file = file_path.clone();
         debug!("Setting input file in model to {:?}", file_path);
@@ -129,7 +132,8 @@ impl Model {
 
                     // Update output filename if an output file path was already set and filename
                     // sync is on.
-                    if !self.current_job.paths.output_file.as_os_str().is_empty()
+                    if output_sync_enabled
+                        && !self.current_job.paths.output_file.as_os_str().is_empty()
                         && self.current_job.paths.sync_output_filename
                     {
                         self.set_output_file(
@@ -513,7 +517,7 @@ impl Model {
         );
         self.settings = settings;
 
-        self.set_input_file(PathBuf::new());
+        self.set_input_file(PathBuf::new(), false);
         self.set_output_file(PathBuf::new());
         self.write_path_settings_to_ui();
         self.write_encoding_settings_to_ui();
