@@ -25,6 +25,8 @@ isolang = { version = "2.4", features = [
 regex = "1"
 rand = "0.9"
 whatlang = "0.18"
+pest = "2"
+pest_derive = "2"
 
 
 [build-dependencies]
