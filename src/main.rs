@@ -6,6 +6,7 @@ mod ffmpeg;
 mod job;
 mod metadata;
 mod model;
+mod parsing;
 mod settings;
 mod strings;
 mod subtitles;
@@ -84,8 +85,9 @@ fn main() -> Result<(), slint::PlatformError> {
             "Received matroska file title edited event. Value now is {}.",
             title
         );
-        model_clone.borrow_mut().current_job.matroska.file_title = title.to_string();
-        model_clone.borrow().write_settings_to_file();
+        model_clone
+            .borrow_mut()
+            .set_matroska_file_title(title.as_str(), false);
     });
 
     //////////////////////////////

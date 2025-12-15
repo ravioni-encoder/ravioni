@@ -2,6 +2,7 @@ use slint::SharedString;
 
 use crate::job::{Job, JobStatus};
 use crate::metadata::{duration_to_shared_string, InputFileMetadata};
+use crate::parsing::extract_matroska_title_from_filename;
 use crate::settings::{AudioSettings, Settings, VideoSettings};
 use crate::MainWindow;
 use crate::{ffmpeg, job};
@@ -149,6 +150,15 @@ impl Model {
                                 .unwrap_or_default(),
                         );
                     }
+
+                    // Suggest matroska file title
+                    if let Some(name) = file_path.file_name() {
+                        let filename = name.to_string_lossy();
+                        self.set_matroska_file_title(
+                            &extract_matroska_title_from_filename(&filename),
+                            true,
+                        );
+                    }
                 }
             }
         }
@@ -235,6 +245,17 @@ impl Model {
 
         // Write to file last, so that potential errors that crash the UI are
         // not persisted.
+        self.write_settings_to_file();
+    }
+
+    /// Sets the given string as the matroska file tile.
+    pub fn set_matroska_file_title(&mut self, title: &str, propagate_to_ui: bool) {
+        self.current_job.matroska.file_title = title.to_string();
+        if propagate_to_ui {
+            if let Some(ui) = self.ui_weak.clone().upgrade() {
+                ui.set_matroska_file_title(title.into())
+            }
+        }
         self.write_settings_to_file();
     }
 
