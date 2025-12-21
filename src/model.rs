@@ -111,6 +111,10 @@ impl Model {
             ui.set_canStartEncoding(false);
             // Remove old errors
             ui.set_inputFileError(SharedString::new());
+            // Remove old metadata (duration, fps)
+            ui.set_inputDurationAsString(SharedString::new());
+            ui.set_inputFps(0.0);
+
 
             let Some(file_path_str) = file_path.to_str() else {
                 ui.set_inputFileError(
@@ -239,7 +243,7 @@ impl Model {
                 }
             }
             // There is no metadata extraction for the directory, so we can
-            // determine in this  if its ready.
+            // determine in this if its ready.
             ui.set_canStartEncoding(self.is_encode_startable());
         }
 
