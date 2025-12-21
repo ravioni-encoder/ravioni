@@ -115,7 +115,6 @@ impl Model {
             ui.set_inputDurationAsString(SharedString::new());
             ui.set_inputFps(0.0);
 
-
             let Some(file_path_str) = file_path.to_str() else {
                 ui.set_inputFileError(
                     "Could not convert path into valid string. Unicode problem?".into(),
@@ -635,25 +634,42 @@ impl Model {
     /// This function is called on demand, after the thread has notified the main event loop that it
     /// is has finished. Therefore, this method can be sure that there is metadata to fetch.
     pub fn collect_input_file_metadata(&mut self) {
-        if let Some(rx) = self.input_file_metadata_rx.take() {
-            if let Ok(Ok(metadata)) = rx.recv() {
+        let Some(rx) = self.input_file_metadata_rx.take() else {
+            return;
+        };
+
+        let Ok(metadata_result) = rx.recv() else {
+            error!(
+                "collect_input_file_metadata() was called but no valid metadata was received \
+            over the channel. This is likely a bug."
+            );
+            return;
+        };
+
+        match metadata_result {
+            Ok(metadata) => {
                 debug!(
                     "collect_input_file_metadata(): Received valid metadata over channel: {:?}",
-                    metadata.clone()
+                    metadata
                 );
                 self.current_job.input_file_metadata = Some(metadata.clone());
 
-                if let Some(ui) = self.ui_weak.clone().upgrade() {
+                if let Some(ui) = self.ui_weak.upgrade() {
                     debug!("collect_input_file_metadata(): Updating UI");
                     ui.set_inputFps(metadata.fps);
                     ui.set_inputDurationAsString(duration_to_shared_string(&metadata.duration));
                     ui.set_canStartEncoding(self.is_encode_startable());
                 }
-            } else {
-                error!(
-                    "collect_input_file_metadata() was called but no valid metadata was received
-                    over the channel. This is likely a bug."
-                )
+            }
+            Err(_) => {
+                if let Some(ui) = self.ui_weak.upgrade() {
+                    ui.set_inputFileError(
+                        "ffmpeg could not extract metadata from the input file. \
+                    It is likely not a valid video file."
+                            .into(),
+                    );
+                }
+                debug!("collect_input_file_metadata(): Received invalid metadata over channel");
             }
         }
     }
